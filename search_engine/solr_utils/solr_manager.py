@@ -5,6 +5,7 @@ import requests
 import subprocess
 
 import json
+import streamlit as st
 
 # Delete later
 import pandas as pd
@@ -16,15 +17,27 @@ class SolrManager:
         self.csv_path = csv_path
 
         # Start Solr node if no running Solr nodes
-        if not self.check_solr_status():
+        # if not self.check_solr_status():
+        #     self.start_solr()
+
+        # Check if Solr is already running and the core exists
+        if not self.check_solr_status() or not self.core_exists():
             self.start_solr()
+            self.delete_existing_core()
+            self.create_core()
+            self.add_custom_schema()
+            self.ingest_data()
 
         # self.delete_existing_core()
         # self.create_core()
         # self.add_custom_schema()
-        # self.add_spellcheck()
+        # # self.add_spellcheck()
         # # self.refresh_core()
         # self.ingest_data()
+
+    def core_exists(self):
+        response = requests.get("http://localhost:8983/solr/admin/cores", params={"action": "STATUS"})
+        return "search_reddit" in response.json()["status"]
 
     def check_solr_status(self):
         result = subprocess.run([os.path.join(self.solr_dir, "bin\\solr.cmd"), "status"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -40,7 +53,7 @@ class SolrManager:
             print("Solr started successfully.")
         except subprocess.CalledProcessError as e:
             # Handle any errors that occur during the process
-            print(f"Solr did not start, error code: {e}")
+            print(f"Start Solr error code: {e}")
 
     def delete_existing_core(self):
         # Delete any existing core
@@ -53,8 +66,17 @@ class SolrManager:
             print("No existing core found.")
 
     def create_core(self):
-        # Create directory
-        shutil.copytree(os.path.join(self.solr_dir, "server\\solr\\configsets\\_default"), (os.path.join(self.solr_dir, "server\\solr\\search_reddit")))
+
+        # Define source and destination directories
+        source_dir = os.path.join(self.solr_dir, "server\\solr\\configsets\\_default")
+        destination_dir = os.path.join(self.solr_dir, "server\\solr\\search_reddit")
+
+        # Remove the existing destination directory if it exists
+        if os.path.exists(destination_dir):
+            shutil.rmtree(destination_dir)
+
+        # Copy the source directory to the destination
+        shutil.copytree(source_dir, destination_dir)
 
         # Create core
         response = requests.get("http://localhost:8983/solr/admin/cores?action=CREATE&name=search_reddit&instanceDir=search_reddit")
@@ -101,14 +123,6 @@ class SolrManager:
 
 
         for schema_dict in schema_list:
-            # schema = urlencode(schema_dict)
-            # response = self.get_api_result("http://localhost:8983/api/cores/search_reddit/schema?json="+schema)
-            # if response['responseHeader']['status'] == 400:
-            #     print(f"Could not add schema with name: {schema_dict[list(schema_dict.keys())[0]]['name']}")
-            # elif response['responseHeader']['status'] == 0:
-            #     print(f"Added schema with name: {schema_dict[list(schema_dict.keys())[0]]['name']}")
-
-
             response = requests.get("http://localhost:8983/api/cores/search_reddit/schema", params=schema_dict)
             
             # Check the response
@@ -129,7 +143,7 @@ class SolrManager:
         else:
             print("CSV data was not sent, error code: ", response.status_code)  
 
-    def get_text_query_result(self, text, type, date_range=None, num_rows=50, phrase_search=True):
+    def get_text_query_result(self, text, type, date_range=None, num_rows=30, phrase_search=True):
 
         if len(text.split(" ")) > 1:
             # If searching for the whole phrase
@@ -158,7 +172,7 @@ class SolrManager:
             return response.json()
         else:
             return None
-        
+ 
     def get_comment_from_post_id_and_text(self, post_id, text, num_rows=10):
 
         result = []
@@ -211,9 +225,6 @@ class SolrManager:
                 
         else:
             return result
-
-            
-
     
     def add_spellcheck(self):
         spellcheck_config = {"add-searchcomponent":
@@ -283,7 +294,7 @@ if __name__ == "__main__":
     solr_manager = SolrManager(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "solr-9.5.0-slim"),
                             os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "data/cleaned_combined_data.csv"))
 
-    # result = solr_manager.get_text_query_result("ford", type="post", num_rows=10, phrase_search=False)
-    result = solr_manager.get_comment_from_post_id_and_text("t3_13ru6m6", "ford")
+    result = solr_manager.get_text_query_result("ford", type="post", num_rows=10, phrase_search=False)
+    # result = solr_manager.get_comment_from_post_id_and_text("t3_13ru6m6", "ford")
     print(type(result))
     print(json.dumps(result, indent=4))
