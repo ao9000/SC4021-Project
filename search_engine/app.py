@@ -44,7 +44,7 @@ with search_col:
 if not query:
     _,info_col,_ = st.columns([1,2,1])
     with info_col:
-        st.info("Please type in keywords and press 'Enter' to start.")
+        st.info("Please type in keywords and click 'Search' to start.")
 
 
 if query and search_button:

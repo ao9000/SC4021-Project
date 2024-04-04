@@ -143,7 +143,7 @@ class SolrManager:
         else:
             print("CSV data was not sent, error code: ", response.status_code)  
 
-    def get_text_query_result(self, text, type, date_range=None, num_rows=30, phrase_search=True):
+    def get_text_query_result(self, text, type, date_range=None, num_rows=15, phrase_search=True):
 
         if len(text.split(" ")) > 1:
             # If searching for the whole phrase
