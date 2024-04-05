@@ -5,11 +5,13 @@ import matplotlib.pyplot as plt
 from annotated_text import annotated_text
 from wordcloud import WordCloud
 
-from utils.utils import get_tokens
+from utils.utils import get_tokens, bold_matching_words, format_text
 
 def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
 
     tokens = []
+
+    # print(doc)
 
     # Display post
     with post_col.container(border=False, height=500):
@@ -17,8 +19,12 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
             (f'Subreddit: {doc["subreddit_name"][0]}', "")
         )
         st.markdown(f"<p style='font-size:20px;'>User: {doc['author'][0]}</p>", unsafe_allow_html=True)
-        st.markdown(f"<p style='text-align: center;font-size:30px;'>{doc['text'][0]}</p>", unsafe_allow_html=True)
-        st.write(f'{doc["score"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(doc["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
+
+        # st.markdown(f"<p style='text-align: center;font-size:30px;'>{doc['text'][0]}</p>", unsafe_allow_html=True)
+        text = format_text(bold_matching_words(query, doc['text'][0]))
+        st.markdown(f"<p style='text-align: center;font-size:30px;'>{text}</p>", unsafe_allow_html=True)
+
+        st.write(f'{doc["upvote"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(doc["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
         st.link_button("Link to Post", "https://www.reddit.com"+doc['permalink'][0])
     with post_col:
         st.write('---')
@@ -30,12 +36,19 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
     with comment_col.container(border=True, height=500):
         st.markdown(f"<h3>Comments:</h3>", unsafe_allow_html=True)
         comment_list = solr_manager.get_comment_from_post_id_and_text(doc["id"], query)
+        # print("comment_list:")
+        # print(comment_list)
         if len(comment_list) > 0:
             for comment in comment_list:
+                # print(comment)
                 with st.container(border=True):
                     st.markdown(f"<p style='font-size:15px;'>User: {comment['author'][0]}</p>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='text-align: center;font-size:20px;'>{comment['text'][0]}</p>", unsafe_allow_html=True)
-                    st.write(f'{comment["score"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(comment["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
+                    # st.markdown(f"<p style='text-align: center;font-size:20px;'>{comment['text'][0]}</p>", unsafe_allow_html=True)
+
+                    text = format_text(bold_matching_words(query, comment['text'][0]))
+                    st.markdown(f"<p style='text-align: center;font-size:20px;'>{text}</p>", unsafe_allow_html=True)
+
+                    st.write(f'{comment["upvote"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(comment["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
                     st.link_button("Link to Comment", "https://www.reddit.com"+comment['permalink'][0])
 
                     # Get tokens from comments
@@ -47,6 +60,37 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
         st.write('---')
 
     return tokens
+
+def display_single_only(query, doc, col, type):
+
+    tokens = []
+
+    # Display post
+    with col.container(border=True):
+        annotated_text(
+            (f'Subreddit: {doc["subreddit_name"][0]}', "")
+        )
+        st.markdown(f"<p style='font-size:20px;'>User: {doc['author'][0]}</p>", unsafe_allow_html=True)
+        if type == "Post":
+            # st.markdown(f"<p style='text-align: center;font-size:30px;'>{doc['text'][0]}</p>", unsafe_allow_html=True)
+
+            text = format_text(bold_matching_words(query, doc['text'][0]))
+            st.markdown(f"<p style='text-align: center;font-size:30px;'>{text}</p>", unsafe_allow_html=True)
+        else:
+            # st.markdown(f"<p style='text-align: center;font-size:25px;'>{doc['text'][0]}</p>", unsafe_allow_html=True)
+
+            text = format_text(bold_matching_words(query, doc['text'][0]))
+            st.markdown(f"<p style='text-align: center;font-size:25px;'>{text}</p>", unsafe_allow_html=True)
+
+
+        st.write(f'{doc["upvote"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(doc["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
+        st.link_button(f"Link to {type}", "https://www.reddit.com"+doc['permalink'][0])
+
+    # Get tokens from post
+    tokens = tokens + get_tokens(doc['text'][0])
+
+    return tokens
+
 
 def display_wordcloud(tokens, query):
 
@@ -66,3 +110,8 @@ def display_wordcloud(tokens, query):
         ax.imshow(wordcloud, interpolation='bilinear')
         ax.axis("off")
         st.pyplot(fig)
+
+def display_no_result_message():
+    _, message_col, _ = st.columns([1,1.1,1])
+    with message_col:
+        st.info("No results. Perhaps check your spelling or change the additional options?")

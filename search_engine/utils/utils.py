@@ -3,13 +3,29 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import string
+import re
 
 import streamlit as st
 
-# Download NLTK resources (stopwords)
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+# Check if NLTK resources are already downloaded
+def check_nltk_resources():
+    try:
+        nltk.data.find('tokenizers/punkt')
+        nltk.data.find('corpora/stopwords')
+        nltk.data.find('corpora/wordnet')
+        return True
+    except LookupError:
+        return False
+    
+
+# Download NLTK resources if not already downloaded
+if not check_nltk_resources():
+    nltk.download('punkt')
+    nltk.download('stopwords')
+    nltk.download('wordnet')
+else:
+    print("NLTK resources are already downloaded.")
+
 
 def get_tokens(text):
     tokens = word_tokenize(text)
@@ -34,6 +50,40 @@ def get_tokens(text):
 
     return lowercase_tokens
 
+def bold_matching_words(query, text, color="DodgerBlue"):
+    # Split the query into individual words
+    query_words = query.split()
+    
+    # Escape special characters in each word of the query
+    escaped_query_words = [re.escape(word) for word in query_words]
+    
+    # Create regex patterns for each word in the query
+    patterns = [re.compile(r'\b(' + word + r')\b', re.IGNORECASE) for word in escaped_query_words]
+    
+    # Replace matching words in the text with the same word wrapped in '**'
+    bold_text = text
+    for pattern in patterns:
+        bold_text = pattern.sub(r'<strong style="color: ' + color + r';">\1</strong>', bold_text)
+    
+    return bold_text
+
+
+def format_text(text):
+    # Format italic words enclosed in *<words>*
+    text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
+    
+    # Format bold words enclosed in **<words>**
+    text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+
+    # Underline words enclosed in square brackets [words]
+    text = re.sub(r'\[([^\]]+)\]', r'<u>\1</u>', text)
+    
+    return text
+
 
 if __name__ == "__main__":
-    print(get_tokens("Buyback complete, surrendered it back to ford today, goodbye lightning ;("))
+    # Example usage
+    query = "have"
+    text = "I have a few words and I have another string that may have the words in query."
+    bold_text = bold_matching_words(query, text)
+    print(bold_text)

@@ -10,12 +10,12 @@ from wordcloud import WordCloud
 from annotated_text import annotated_text
 
 from solr_utils.solr_manager import SolrManager
-from streamlit_utils.st_utils import display_post_and_comment, display_wordcloud
+from streamlit_utils.st_utils import display_post_and_comment, display_wordcloud, display_no_result_message, display_single_only
 
 
 # Set up Solr Core
 solr_manager = SolrManager(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "solr-9.5.0-slim"),
-                           os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "data/cleaned_combined_data.csv"))
+                           os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "data/(copy)cleaned_combined_data.csv"))
 
 # Date range for querying
 min_date = datetime.date(2016, 12, 19) # min date in csv
@@ -25,8 +25,6 @@ max_date = datetime.date(2024, 3, 22) # max date in csv
 # Page setup
 st.set_page_config(page_title="Reddit EV Opinion Search", page_icon=":car:", layout="wide")
 
-if 'sort_by' not in st.session_state:
-    st.session_state['sort_by'] = 'upvotes'
 
 st.markdown("<h1 style='text-align: center;'>&#128663 Reddit Electrical Vehicle Opinion Search</h1>", unsafe_allow_html=True)
 
@@ -39,22 +37,35 @@ with search_col:
             date_start = st.date_input("Select date to retrieve opinions from:", value=None, format="MM/DD/YYYY")
         with date_right_col:
             date_end = st.date_input("Select date to retrieve opinions till:", value=None, format="MM/DD/YYYY")
-    search_button = st.button("Search")
+        st.write('---')
+        exact_matching = st.checkbox("Tick to search for the exact phrase")
+        retrieve_type = st.radio(
+            "Retrieve:",
+            ["Comments only", "Posts only", "Posts and Comments (Will take a longer time)"])
+        st.write('---')
+        retrieve_num = st.slider("Choose the number of post/comments to retrieve:", 5, 30, 10)
+        st.write("Please take note that increasing the number of post/comments to retrieve will increase the loading time.")
+    _, button_col = st.columns([8,1])
+    with button_col:
+        search_button = st.button("Search", type="primary")
 
 if not query:
+    st.write('---')
     _,info_col,_ = st.columns([1,2,1])
     with info_col:
         st.info("Please type in keywords and click 'Search' to start.")
 
-
 if query and search_button:
     with st.spinner("Loading..."):
 
-        tab1, tab2, tab3 = st.container().tabs(["Reddit Posts", "[Not decided yet]", "Word Cloud"])
+        tab1, tab2, tab3 = st.container().tabs(["Opinions on Reddit", "[Not decided yet]", "Word Cloud"])
+
+        # Tokens to store for wordcloud
+        tokens = []
 
         with tab1:
-            st.markdown(f"<h2 style='text-align: center;'>Opinions on Reddit about \"{query}\":</h2>", unsafe_allow_html=True)
-            st.write('---')
+            # st.markdown(f"<h2 style='text-align: center;'>Opinions on Reddit about \"{query}\":</h2>", unsafe_allow_html=True)
+            # st.write('---')
 
             if date_start and date_end:
                 tmp_date_range = [str(date_start.strftime('%Y-%m-%d')), str(date_end.strftime('%Y-%m-%d'))]
@@ -65,24 +76,72 @@ if query and search_button:
             else:
                 tmp_date_range = None
 
-            post_results = solr_manager.get_text_query_result(query, 'post', tmp_date_range)
+            if retrieve_type == "Posts and Comments (Will take a longer time)":
+                st.markdown(f"<h2 style='text-align: center;'>Posts and Comments on Reddit about \"{query}\":</h2>", unsafe_allow_html=True)
+                st.write('---')
+                if exact_matching:
+                    results = solr_manager.get_text_query_result(query, 'post', tmp_date_range, phrase_search=True, num_rows=retrieve_num)
+                else:
+                    results = solr_manager.get_text_query_result(query, 'post', tmp_date_range, num_rows=retrieve_num)
 
-            post_col, comment_col= st.columns([1,1])
+                if results["response"]["numFound"] == 0:
+                    # _, message_col, _ = st.columns([1,1,1])
+                    # with message_col:
+                    #     st.info("No results. Perhaps change the date range or check your spelling?")
+                    display_no_result_message()
 
-            if post_results["response"]["numFound"] == 0:
-                _, message_col, _ = st.columns([1,1,1])
-                with message_col:
-                    st.info("No results. Perhaps change the date range or check your spelling?")
+                else:
+                    post_col, comment_col= st.columns([1,1])
+                    for doc in results["response"]["docs"]:
+                        tokens = tokens + display_post_and_comment(solr_manager, query, doc, post_col, comment_col)
 
-            # Get more results with more lenient search if querying with phrase and results are less than 50
-            elif len(query.split(" ")) and post_results["response"]["numFound"] < 50:
-                post_results = solr_manager.get_text_query_result(query, 'post', tmp_date_range, phrase_search=False)
+            elif retrieve_type == "Posts only":
+                st.markdown(f"<h2 style='text-align: center;'>Posts on Reddit about \"{query}\":</h2>", unsafe_allow_html=True)
+                st.write('---')
+                if exact_matching:
+                    results = solr_manager.get_text_query_result(query, 'post', tmp_date_range, phrase_search=True, num_rows=retrieve_num)
+                else:
+                    results = solr_manager.get_text_query_result(query, 'post', tmp_date_range, num_rows=retrieve_num)
 
-                for doc in post_results["response"]["docs"]:
-                    tokens = display_post_and_comment(solr_manager, query, doc, post_col, comment_col)
-            else:
-                for doc in post_results["response"]["docs"]:
-                    tokens = display_post_and_comment(solr_manager, query, doc, post_col, comment_col)
+                if results["response"]["numFound"] == 0:
+                    # _, message_col, _ = st.columns([1,1,1])
+                    # with message_col:
+                    #     st.info("No results. Perhaps change the date range or check your spelling?")
+                    display_no_result_message()
+
+                else:
+                    _, post_col, _= st.columns([1,5,1])
+                    for doc in results["response"]["docs"]:
+                        tokens = tokens + display_single_only(query, doc, post_col, "Post")
+
+            else: # Comments only
+                st.markdown(f"<h2 style='text-align: center;'>Comments on Reddit about \"{query}\":</h2>", unsafe_allow_html=True)
+                st.write('---')
+                if exact_matching:
+                    results = solr_manager.get_text_query_result(query, 'comment', tmp_date_range, phrase_search=True, num_rows=retrieve_num)
+                else:
+                    results = solr_manager.get_text_query_result(query, 'comment', tmp_date_range, num_rows=retrieve_num)
+
+                if results["response"]["numFound"] == 0:
+                    # _, message_col, _ = st.columns([1,1,1])
+                    # with message_col:
+                    #     st.info("No results. Perhaps change the date range or check your spelling?")
+                    display_no_result_message()
+
+                else:
+                    _, post_col, _= st.columns([1,5,1])
+                    for doc in results["response"]["docs"]:
+                        tokens = tokens + display_single_only(query, doc, post_col, "Comment")
+
+            # # Get more results with more lenient search if querying with phrase and results are less than 10
+            # elif len(query.split(" ")) and post_results["response"]["numFound"] < 10:
+            #     post_results = solr_manager.get_text_query_result(query, 'post', tmp_date_range, phrase_search=False)
+
+            #     for doc in post_results["response"]["docs"]:
+            #         tokens = display_post_and_comment(solr_manager, query, doc, post_col, comment_col)
+            # else:
+            #     for doc in post_results["response"]["docs"]:
+            #         tokens = display_post_and_comment(solr_manager, query, doc, post_col, comment_col)
 
         with tab2:
             st.markdown(f"<h2 style='text-align: center;'>Reddit Comments about \"{query}\":</h2>", unsafe_allow_html=True)
@@ -165,7 +224,10 @@ if query and search_button:
             #         comment_box.link_button("Link to comment", "https://www.reddit.com"+gd_df.iloc[i]['permalink'])
         
         with tab3:
-            display_wordcloud(tokens, query)
+            if len(tokens) == 0:
+                display_no_result_message()
+            else:
+                display_wordcloud(tokens, query)
 
         css = '''
         <style>

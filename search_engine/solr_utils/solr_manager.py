@@ -114,7 +114,8 @@ class SolrManager:
         schema_list.append({"add-field":{"name":"id","type":"string","stored":True,"indexed":True,"multiValued":False,"required":True}})
         schema_list.append({"add-field":{"name":"num_comments","type":"pdoubles","stored":True,"indexed":True, "multiValued":False, "omitNorms":True,"docValues":True}})
         schema_list.append({"add-field":{"name":"permalink","type":"string","stored":True,"multiValued":False}})
-        schema_list.append({"add-field":{"name":"score","type":"plong","stored":True,"indexed":True, "multiValued":False, "omitNorms":True,"docValues":True}})
+        # schema_list.append({"add-field":{"name":"score","type":"plong","stored":True,"indexed":True, "multiValued":False, "omitNorms":True,"docValues":True}})
+        schema_list.append({"add-field":{"name":"upvote","type":"plong","stored":True,"indexed":True, "multiValued":False, "omitNorms":True,"docValues":True}})
         schema_list.append({"add-field":{"name":"subreddit_name","type":"string","stored":True,"multiValued":True}})
         schema_list.append({"add-field":{"name":"upvote_ratio","type":"pdoubles","stored":True,"indexed":True, "multiValued":False, "omitNorms":True,"docValues":True}})
         schema_list.append({"add-field":{"name":"url","type":"string","stored":True,"multiValued":False}})
@@ -143,14 +144,14 @@ class SolrManager:
         else:
             print("CSV data was not sent, error code: ", response.status_code)  
 
-    def get_text_query_result(self, text, type, date_range=None, num_rows=15, phrase_search=True):
+    def get_text_query_result(self, text, type, date_range=None, num_rows=10, phrase_search=False):
 
         if len(text.split(" ")) > 1:
             # If searching for the whole phrase
             if phrase_search:
-                query = f"text:({text.replace(' ', ' AND ')})"
+                query = f'text:"{text}"'
             else:
-                query = f"text:({text})"
+                query = f'text:({text.replace(" ", " AND ")})'
         else:
             query = f"text:({text})"
 
@@ -159,9 +160,13 @@ class SolrManager:
         if date_range:
             query = query + f" AND created_utc:[{str(date_range[0])}T00:00:00Z TO {str(date_range[1])}T23:59:59Z]"
 
+        print("get_text_query_result's query:")
+        print(query)
+
         params = {
             "q" : query,
-            "rows" : num_rows
+            "rows" : num_rows,
+            "sort": "upvote desc"
         }
 
         response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params)
@@ -180,51 +185,63 @@ class SolrManager:
         # Reddit uses id with "t3_" prefix to indicate post_id globally
         post_id = f"t3_{post_id}"
 
-        if len(text.split(" ")) > 1:
-            # If searching for the whole phrase
-            query = f"post_id:{post_id} AND text:({text.replace(' ', ' AND ')}) AND type:comment"
-        else:
-            query = f"post_id:{post_id} AND text:({text}) AND type:comment"
+        # if len(text.split(" ")) > 1:
+        #     # If searching for the whole phrase
+        #     query = f"post_id:{post_id} AND text:({text.replace(' ', ' AND ')}) AND type:comment"
+        # else:
+        #     query = f"post_id:{post_id} AND text:({text}) AND type:comment"
+
+        # query = f"post_id:{post_id} AND text:({text}) AND type:comment"
+
+        query = f"post_id:{post_id} AND type:comment"
 
         params = {
             "q" : query,
-            "rows" : num_rows
+            "rows" : num_rows,
+            "sort": "upvote desc"
         }
         response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params).json()
+
         if not response["response"]["numFound"] == 0:
-            result = result + response["response"]["docs"]
-
-        # If get lesser results than expected and it is a phrase, get results with more lenient query
-        if len(result) < num_rows:
-
-            if len(text.split(" ")) > 1:
-                query = f"post_id:{post_id} AND text:({text}) AND type:comment"
-                params = {
-                    "q" : query,
-                    "rows" : int(num_rows - len(result)) # get results just enough to fufill num_rows number
-                }
-                response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params).json()
-                if not response["response"]["numFound"] == 0:
-                    result = result + response["response"]["docs"]
-                if len(result) == num_rows:
-                    return result
-            
-            # Query with post_id only
-            query = f"post_id:{post_id} AND type:comment"
-            params = {
-                "q" : query,
-                "rows" : int(num_rows - len(result)) # get results just enough to fufill num_rows number
-            }
-
-            response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params).json()
-            if not response["response"]["numFound"] == 0:
-                result = result + response["response"]["docs"]
-            
-            # At this point, return all the results gotten regardless of whether it has retrived num_rows comments
-            return result
-                
+            return response["response"]["docs"]
         else:
-            return result
+            return None
+
+
+        # if not response["response"]["numFound"] == 0:
+        #     result = result + response["response"]["docs"]
+
+        # # If get lesser results than expected and it is a phrase, get results with more lenient query
+        # if len(result) < num_rows:
+
+        #     if len(text.split(" ")) > 1:
+        #         query = f"post_id:{post_id} AND text:({text}) AND type:comment"
+        #         params = {
+        #             "q" : query,
+        #             "rows" : int(num_rows - len(result)) # get results just enough to fufill num_rows number
+        #         }
+        #         response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params).json()
+        #         if not response["response"]["numFound"] == 0:
+        #             result = result + response["response"]["docs"]
+        #         if len(result) == num_rows:
+        #             return result
+            
+        #     # Query with post_id only
+        #     query = f"post_id:{post_id} AND type:comment"
+        #     params = {
+        #         "q" : query,
+        #         "rows" : int(num_rows - len(result)) # get results just enough to fufill num_rows number
+        #     }
+
+        #     response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params).json()
+        #     if not response["response"]["numFound"] == 0:
+        #         result = result + response["response"]["docs"]
+            
+        #     # At this point, return all the results gotten regardless of whether it has retrived num_rows comments
+        #     return result
+                
+        # else:
+        #     return result
     
     def add_spellcheck(self):
         spellcheck_config = {"add-searchcomponent":
@@ -292,9 +309,9 @@ if __name__ == "__main__":
     print(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "solr-9.5.0-slim"))
 
     solr_manager = SolrManager(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "solr-9.5.0-slim"),
-                            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "data/cleaned_combined_data.csv"))
+                            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "data/(copy)cleaned_combined_data.csv"))
 
-    result = solr_manager.get_text_query_result("ford", type="post", num_rows=10, phrase_search=False)
-    # result = solr_manager.get_comment_from_post_id_and_text("t3_13ru6m6", "ford")
+    # result = solr_manager.get_text_query_result("ford", type="comment", num_rows=10, phrase_search=False)
+    result = solr_manager.get_comment_from_post_id_and_text("ngqmpr", "ford")
     print(type(result))
     print(json.dumps(result, indent=4))
