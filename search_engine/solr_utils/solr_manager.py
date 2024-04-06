@@ -5,7 +5,7 @@ import requests
 import subprocess
 
 import json
-import streamlit as st
+import xml.etree.ElementTree as ET
 
 # Delete later
 import pandas as pd
@@ -15,10 +15,7 @@ class SolrManager:
     def __init__(self, solr_dir, csv_path):
         self.solr_dir = solr_dir
         self.csv_path = csv_path
-
-        # Start Solr node if no running Solr nodes
-        # if not self.check_solr_status():
-        #     self.start_solr()
+        self.solrconfig_xml_filepath = os.path.join(solr_dir, "server\solr\search_reddit\conf\solrconfig.xml")
 
         # Check if Solr is already running and the core exists
         if not self.check_solr_status() or not self.core_exists():
@@ -26,14 +23,9 @@ class SolrManager:
             self.delete_existing_core()
             self.create_core()
             self.add_custom_schema()
+            self.add_spellcheck()
+            self.refresh_core()
             self.ingest_data()
-
-        # self.delete_existing_core()
-        # self.create_core()
-        # self.add_custom_schema()
-        # # self.add_spellcheck()
-        # # self.refresh_core()
-        # self.ingest_data()
 
     def core_exists(self):
         response = requests.get("http://localhost:8983/solr/admin/cores", params={"action": "STATUS"})
@@ -132,6 +124,31 @@ class SolrManager:
             else:
                 print(f"Could not add schema with name: {schema_dict[list(schema_dict.keys())[0]]['name']}")
 
+    def add_spellcheck(self):
+        # Parse the XML file
+        tree = ET.parse(self.solrconfig_xml_filepath)
+        root = tree.getroot()
+
+        # Find the element with name "spellcheck" and change its value
+        for elem in root.iter('str'):
+            if elem.attrib.get('name') == 'spellcheck':
+                elem.text = 'true'
+        
+        # Find the element with name "queryAnalyzerFieldType" and change its value
+        for elem in root.iter('str'):
+            if elem.attrib.get('name') == 'queryAnalyzerFieldType':
+                elem.text = 'text_reddit'
+
+        # Find the element with name "field" under "spellchecker" and change its value
+        for elem in root.iter('lst'):
+            if elem.attrib.get('name') == 'spellchecker':
+                for child_elem in elem.iter('str'):
+                    if child_elem.attrib.get('name') == 'field':
+                        child_elem.text = 'text'
+
+        # Write back the modified XML to the file
+        tree.write(self.solrconfig_xml_filepath)
+
     def ingest_data(self):
         # Open and read the CSV file
         with open(self.csv_path, "rb") as file:
@@ -185,14 +202,6 @@ class SolrManager:
         # Reddit uses id with "t3_" prefix to indicate post_id globally
         post_id = f"t3_{post_id}"
 
-        # if len(text.split(" ")) > 1:
-        #     # If searching for the whole phrase
-        #     query = f"post_id:{post_id} AND text:({text.replace(' ', ' AND ')}) AND type:comment"
-        # else:
-        #     query = f"post_id:{post_id} AND text:({text}) AND type:comment"
-
-        # query = f"post_id:{post_id} AND text:({text}) AND type:comment"
-
         query = f"post_id:{post_id} AND type:comment"
 
         params = {
@@ -206,71 +215,6 @@ class SolrManager:
             return response["response"]["docs"]
         else:
             return None
-
-
-        # if not response["response"]["numFound"] == 0:
-        #     result = result + response["response"]["docs"]
-
-        # # If get lesser results than expected and it is a phrase, get results with more lenient query
-        # if len(result) < num_rows:
-
-        #     if len(text.split(" ")) > 1:
-        #         query = f"post_id:{post_id} AND text:({text}) AND type:comment"
-        #         params = {
-        #             "q" : query,
-        #             "rows" : int(num_rows - len(result)) # get results just enough to fufill num_rows number
-        #         }
-        #         response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params).json()
-        #         if not response["response"]["numFound"] == 0:
-        #             result = result + response["response"]["docs"]
-        #         if len(result) == num_rows:
-        #             return result
-            
-        #     # Query with post_id only
-        #     query = f"post_id:{post_id} AND type:comment"
-        #     params = {
-        #         "q" : query,
-        #         "rows" : int(num_rows - len(result)) # get results just enough to fufill num_rows number
-        #     }
-
-        #     response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params).json()
-        #     if not response["response"]["numFound"] == 0:
-        #         result = result + response["response"]["docs"]
-            
-        #     # At this point, return all the results gotten regardless of whether it has retrived num_rows comments
-        #     return result
-                
-        # else:
-        #     return result
-    
-    def add_spellcheck(self):
-        spellcheck_config = {"add-searchcomponent":
-                              {"name": "spellcheck2",
-                               "class": "solr.SpellCheckComponent",
-                               "config":
-                               {"queryAnalyzerFieldType": "text_reddit",
-                                "spellchecker":
-                                {"name": "default",
-                                 "field": "text",
-                                 "classname": "solr.DirectSolrSpellChecker",
-                                 "distanceMeasure": "internal",
-                                 "accuracy": 0.5,
-                                 "maxEdits": 2,
-                                 "minPrefix": 1,
-                                 "maxInspections": 5,
-                                 "minQueryLength": 4,
-                                 "maxQueryFrequency": 0.01
-                                 }}}}
-        
-        response = requests.post("http://localhost:8983/api/cores/search_reddit/config",
-                                 data=json.dumps(spellcheck_config),
-                                 headers={"Content-type":"application/csv"})
-        
-        # Check the response status
-        if response.status_code == 200:
-            print("Added spellcheck successfully.")
-        else:
-            print("Spellcheck not added, error code: ", response.status_code) 
 
     def refresh_core(self):
 
@@ -287,7 +231,7 @@ class SolrManager:
         else:
             print("Core was not reloaded, error code: ", response.status_code)
 
-    def spell_check(self, text):
+    def spellcheck(self, text):
         params = {
             "indent": "true",
             "spellcheck.q": text,
@@ -312,6 +256,7 @@ if __name__ == "__main__":
                             os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "data/(copy)cleaned_combined_data.csv"))
 
     # result = solr_manager.get_text_query_result("ford", type="comment", num_rows=10, phrase_search=False)
-    result = solr_manager.get_comment_from_post_id_and_text("ngqmpr", "ford")
+    # result = solr_manager.get_comment_from_post_id_and_text("ngqmpr", "ford")
+    result = solr_manager.spellcheck("graet")
     print(type(result))
     print(json.dumps(result, indent=4))
