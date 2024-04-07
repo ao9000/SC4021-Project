@@ -232,9 +232,10 @@ class SolrManager:
             print("Core was not reloaded, error code: ", response.status_code)
 
     def spellcheck(self, text):
+
         params = {
             "indent": "true",
-            "spellcheck.q": text,
+            "spellcheck.q": f"{text}",
             "spellcheck": "true",
             "spellcheck.collate": "true"
         }
@@ -257,6 +258,7 @@ if __name__ == "__main__":
 
     # result = solr_manager.get_text_query_result("ford", type="comment", num_rows=10, phrase_search=False)
     # result = solr_manager.get_comment_from_post_id_and_text("ngqmpr", "ford")
-    result = solr_manager.spellcheck("graet")
-    print(type(result))
+    # result = solr_manager.spellcheck("graet")["spellcheck"]["suggestions"][1]["suggestion"][0]["word"]
+    result = solr_manager.spellcheck("hillo")#["spellcheck"]["suggestions"]#[1]["suggestion"][0]["word"]
+    # print(type(result))
     print(json.dumps(result, indent=4))

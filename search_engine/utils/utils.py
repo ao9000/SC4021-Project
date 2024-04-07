@@ -5,8 +5,6 @@ from nltk.stem import WordNetLemmatizer
 import string
 import re
 
-import streamlit as st
-
 # Check if NLTK resources are already downloaded
 def check_nltk_resources():
     try:
@@ -79,7 +77,6 @@ def format_text(text):
     text = re.sub(r'\[([^\]]+)\]', r'<u>\1</u>', text)
     
     return text
-
 
 if __name__ == "__main__":
     # Example usage

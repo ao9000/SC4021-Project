@@ -84,7 +84,7 @@ def display_single_only(query, doc, col, type):
 
 
         st.write(f'{doc["upvote"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(doc["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
-        st.link_button(f"Link to {type}", "https://www.reddit.com"+doc['permalink'][0])
+        st.link_button(f"Link to {type.capitalize()}", "https://www.reddit.com"+doc['permalink'][0])
 
     # Get tokens from post
     tokens = tokens + get_tokens(doc['text'][0])
