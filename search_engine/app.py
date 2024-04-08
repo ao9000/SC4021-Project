@@ -132,23 +132,30 @@ st.markdown("<h1 style='text-align: center;'>&#128663 Reddit Electrical Vehicle 
 _,search_col,_ = st.columns([1,2,1])
 with search_col:
     query = st.text_input("Enter keywords:", value="")
-    with st.expander("Additional Options:"):
+    _, button_col = st.columns([6,1])
+    with button_col:
+        search_button = st.button("Search", type="primary")
+
+with st.sidebar:
+    st.subheader("Additional options:")
+    exact_matching = st.checkbox("Tick to search for the exact phrase")
+    with st.expander("Date range"):
         date_left_col, date_right_col = st.columns([1,1])
         with date_left_col:
             date_start = st.date_input("Select date to retrieve opinions from:", value=None, format="MM/DD/YYYY")
         with date_right_col:
             date_end = st.date_input("Select date to retrieve opinions till:", value=None, format="MM/DD/YYYY")
-        st.write('---')
-        exact_matching = st.checkbox("Tick to search for the exact phrase")
+    # st.write('---')
+
+    with st.expander("Retrieve types:"):
         retrieve_type = st.radio(
             "Retrieve:",
             ["Comments only", "Posts only", "Posts and Comments (Will take a longer time)"])
-        st.write('---')
+    # st.write('---')
+
+    with st.expander("Number of results to retrieve:"):
         retrieve_num = st.slider("Choose the number of post/comments to retrieve:", 5, 30, 10)
         st.write("Please take note that increasing the number of post/comments to retrieve will increase the loading time.")
-    _, button_col = st.columns([8,1])
-    with button_col:
-        search_button = st.button("Search", type="primary")
 
 if not query:
     st.write('---')
