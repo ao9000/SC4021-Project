@@ -5,7 +5,33 @@ import matplotlib.pyplot as plt
 from annotated_text import annotated_text
 from wordcloud import WordCloud
 
-from utils.utils import get_tokens, bold_matching_words, format_text
+from utils.utils import get_tokens, bold_matching_words, format_text, get_text_html_color
+
+def display_mood_subjectivity(doc, title_font_size, content_font_size):
+
+    st.markdown(f"<p style='text-align: center;font-size:{title_font_size}px;'><strong>Text Analysis:</strong></p>", unsafe_allow_html=True,
+                help="VADER and TextBlob are AI tools that help us understand the 'mood' and subjectivity of the text.\
+                    If they give different categories, it's not a matter of one being right and the other wrong. \
+                    Instead, it's like getting two perspectives on the same text. \
+                    You can consider both and see which resonates more with your understanding of the text. \
+                    Remember, these tools are here to help you, but your interpretation matters the most!")
+            
+    vader_col, textblob_col = st.columns([1,1])
+    with vader_col:
+        with st.container(border=True):
+            st.markdown(f"<p style='text-align: center;font-size:{title_font_size}px;'><strong>VADER model:</strong></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Mood: <strong style='color:{get_text_html_color(doc['vader_sentiment'][0])}';'>\
+                        {doc['vader_sentiment'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Subjectivity: <strong style='color:{get_text_html_color(doc['vader_subjectivity'][0])}';'>\
+                        {doc['vader_subjectivity'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
+            
+    with textblob_col:
+        with st.container(border=True):
+            st.markdown(f"<p style='text-align: center;font-size:{title_font_size}px;'><strong>TextBlob model:</strong></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Mood: <strong style='color:{get_text_html_color(doc['textblob_sentiment'][0])}';'>\
+                        {doc['textblob_sentiment'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Subjectivity: <strong style='color:{get_text_html_color(doc['textblob_subjectivity'][0])}';'>\
+                        {doc['textblob_subjectivity'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
 
 def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
 
@@ -14,7 +40,7 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
     # print(doc)
 
     # Display post
-    with post_col.container(border=False, height=500):
+    with post_col.container(border=False, height=600):
         annotated_text(
             (f'Subreddit: {doc["subreddit_name"][0]}', "")
         )
@@ -26,6 +52,11 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
 
         st.write(f'{doc["upvote"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(doc["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
         st.link_button("Link to Post", "https://www.reddit.com"+doc['permalink'][0])
+
+        st.write('---')
+
+        display_mood_subjectivity(doc, 18, 15)
+        
     with post_col:
         st.write('---')
 
@@ -33,7 +64,7 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
     tokens = tokens + get_tokens(doc['text'][0])
 
     # Display comments
-    with comment_col.container(border=True, height=500):
+    with comment_col.container(border=True, height=600):
         st.markdown(f"<h3>Comments:</h3>", unsafe_allow_html=True)
         comment_list = solr_manager.get_comment_from_post_id_and_text(doc["id"], query)
         # print("comment_list:")
@@ -51,6 +82,10 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
                     st.write(f'{comment["upvote"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(comment["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
                     st.link_button("Link to Comment", "https://www.reddit.com"+comment['permalink'][0])
 
+                    st.write('---')
+
+                    display_mood_subjectivity(comment, 18, 15)
+
                     # Get tokens from comments
                     tokens = tokens + get_tokens(comment['text'][0])
         else:
@@ -64,6 +99,9 @@ def display_post_and_comment(solr_manager, query, doc, post_col, comment_col):
 def display_single_only(query, doc, col, type):
 
     tokens = []
+
+    print("doc in display_single_only:")
+    print(doc)
 
     # Display post
     with col.container(border=True):
@@ -85,6 +123,12 @@ def display_single_only(query, doc, col, type):
 
         st.write(f'{doc["upvote"][0]} **Upvotes**  **·**  Posted on: {datetime.datetime.strptime(doc["created_utc"][0], "%Y-%m-%dT%H:%M:%SZ").strftime("%d %B %Y, %I:%M%p")}')
         st.link_button(f"Link to {type.capitalize()}", "https://www.reddit.com"+doc['permalink'][0])
+
+        st.write('---')
+
+        display_mood_subjectivity(doc, 20, )
+
+        st.write('---')
 
     # Get tokens from post
     tokens = tokens + get_tokens(doc['text'][0])

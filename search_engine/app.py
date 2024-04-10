@@ -22,24 +22,9 @@ if "search_pressed" not in st.session_state:
 if "suggested_query" not in st.session_state:
     st.session_state["suggested_query"] = None
 
-if "date_start" not in st.session_state:
-    st.session_state["date_start"] = None
-
-if "date_end" not in st.session_state:
-    st.session_state["date_end"] = None
-
-if "exact_matching" not in st.session_state:
-    st.session_state["exact_matching"] = False
-
-if "retrieve_type" not in st.session_state:
-    st.session_state["retrieve_type"] = None
-
-if "retrieve_num" not in st.session_state:
-    st.session_state["retrieve_num"] = None
-
 # Set up Solr Core
 solr_manager = SolrManager(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "solr-9.5.0-slim"),
-                           os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "data/(copy)cleaned_combined_data.csv"))
+                           os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "data/(copy)VadersTextBlobCombinedData.csv"))
 
 # Date range for querying
 min_date = datetime.date(2016, 12, 19) # min date in csv
@@ -121,6 +106,7 @@ def display_results(retrieve_type, exact_matching):
                 tokens = tokens + display_single_only(st.session_state['query'], doc, post_col, result_type)
 
     return tokens
+
 
 
 # Page setup

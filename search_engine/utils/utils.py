@@ -78,6 +78,18 @@ def format_text(text):
     
     return text
 
+def get_text_html_color(text):
+    if text == "positive":
+        return "YellowGreen"
+    elif text == "neutral":
+        return "SteelBlue"
+    elif text == "negative":
+        return "Tomato"
+    elif text == "objective":
+        return "Indigo"
+    else: #elif text == "subjective":
+        return "DarkOrange"
+
 if __name__ == "__main__":
     # Example usage
     query = "have"

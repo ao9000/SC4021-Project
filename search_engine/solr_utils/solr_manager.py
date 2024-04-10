@@ -114,6 +114,11 @@ class SolrManager:
         schema_list.append({"add-field":{"name":"type","type":"string","stored":True,"multiValued":True}})
         schema_list.append({"add-field":{"name":"post_id","type":"string","stored":True,"multiValued":True}})
 
+        schema_list.append({"add-field":{"name":"vader_sentiment","type":"string","stored":True,"multiValued":False}})
+        schema_list.append({"add-field":{"name":"vader_subjectivity","type":"string","stored":True,"multiValued":False}})
+        schema_list.append({"add-field":{"name":"textblob_sentiment","type":"string","stored":True,"multiValued":False}})
+        schema_list.append({"add-field":{"name":"textblob_subjectivity","type":"string","stored":True,"multiValued":False}})
+
 
         for schema_dict in schema_list:
             response = requests.get("http://localhost:8983/api/cores/search_reddit/schema", params=schema_dict)
@@ -254,11 +259,11 @@ if __name__ == "__main__":
     print(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "solr-9.5.0-slim"))
 
     solr_manager = SolrManager(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "solr-9.5.0-slim"),
-                            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "data/(copy)cleaned_combined_data.csv"))
+                            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "data/(copy)VadersTextBlobCombinedData.csv"))
 
-    # result = solr_manager.get_text_query_result("ford", type="comment", num_rows=10, phrase_search=False)
+    result = solr_manager.get_text_query_result("ford", type="comment", num_rows=10, phrase_search=False)
     # result = solr_manager.get_comment_from_post_id_and_text("ngqmpr", "ford")
     # result = solr_manager.spellcheck("graet")["spellcheck"]["suggestions"][1]["suggestion"][0]["word"]
-    result = solr_manager.spellcheck("hillo")#["spellcheck"]["suggestions"]#[1]["suggestion"][0]["word"]
+    # result = solr_manager.spellcheck("hillo")#["spellcheck"]["suggestions"]#[1]["suggestion"][0]["word"]
     # print(type(result))
     print(json.dumps(result, indent=4))
