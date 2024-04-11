@@ -4,6 +4,8 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import string
 import re
+from collections import Counter
+import streamlit as st
 
 # Check if NLTK resources are already downloaded
 def check_nltk_resources():
@@ -25,7 +27,7 @@ else:
     print("NLTK resources are already downloaded.")
 
 
-def get_tokens(text):
+def get_tokens_freq_dict(text):
     tokens = word_tokenize(text)
 
     # Remove punctuation
@@ -46,7 +48,9 @@ def get_tokens(text):
     # Convert to lowercase
     lowercase_tokens = [token.lower() for token in lemmatized_tokens]
 
-    return lowercase_tokens
+    word_freq = Counter(lowercase_tokens)
+
+    return word_freq
 
 def bold_matching_words(query, text, color="DodgerBlue"):
     # Split the query into individual words
@@ -89,6 +93,51 @@ def get_text_html_color(text):
         return "Indigo"
     else: #elif text == "subjective":
         return "DarkOrange"
+    
+def update_tokens_and_labels(doc):
+
+    if doc['vader_sentiment'][0] == 'positive':
+        st.session_state["tokens"]["vader_positive"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["vader_positive"] += 1
+
+    elif doc['vader_sentiment'][0] == 'neutral':
+        st.session_state["tokens"]["vader_neutral"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["vader_neutral"] += 1
+
+    else: # if doc['vader_sentiment'][0] == 'negative':
+        st.session_state["tokens"]["vader_negative"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["vader_negative"] += 1
+
+    if doc['vader_subjectivity'][0] == 'subjective':
+        st.session_state["tokens"]["vader_subjective"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["vader_subjective"] += 1
+    
+    else:
+        st.session_state["tokens"]["vader_objective"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["vader_objective"] += 1
+
+    ###############################################
+
+    if doc['textblob_sentiment'][0] == 'positive':
+        st.session_state["tokens"]["textblob_positive"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["textblob_positive"] += 1
+
+    elif doc['textblob_sentiment'][0] == 'neutral':
+        st.session_state["tokens"]["textblob_neutral"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["textblob_neutral"] += 1
+
+    else: # if doc['vader_sentiment'][0] == 'negative':
+        st.session_state["tokens"]["textblob_negative"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["textblob_negative"] += 1
+
+    if doc['textblob_subjectivity'][0] == 'subjective':
+        st.session_state["tokens"]["textblob_subjective"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["textblob_subjective"] += 1
+    
+    else:
+        st.session_state["tokens"]["textblob_objective"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["textblob_objective"] += 1
+        
 
 if __name__ == "__main__":
     # Example usage
