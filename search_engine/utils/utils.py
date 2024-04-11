@@ -27,7 +27,7 @@ else:
     print("NLTK resources are already downloaded.")
 
 
-def get_tokens_freq_dict(text):
+def get_tokens_freq_dict(text, return_type='dictionary'):
     tokens = word_tokenize(text)
 
     # Remove punctuation
@@ -48,9 +48,11 @@ def get_tokens_freq_dict(text):
     # Convert to lowercase
     lowercase_tokens = [token.lower() for token in lemmatized_tokens]
 
-    word_freq = Counter(lowercase_tokens)
-
-    return word_freq
+    if return_type == "dictionary":
+        word_freq = Counter(lowercase_tokens)
+        return word_freq
+    else:
+        return lowercase_tokens
 
 def bold_matching_words(query, text, color="DodgerBlue"):
     # Split the query into individual words
@@ -144,4 +146,3 @@ if __name__ == "__main__":
     query = "have"
     text = "I have a few words and I have another string that may have the words in query."
     bold_text = bold_matching_words(query, text)
-    print(bold_text)
