@@ -52,6 +52,9 @@ def init_session_states():
             "textblob_objective": 0
         }
 
+    if "query_time" not in st.session_state:
+        st.session_state["query_time"] = None 
+
 def suggest_diff_query(solr_manager, query):
     if not len(st.session_state["query"].split(' ')) > 1:
         suggested_query = solr_manager.spellcheck(query)["spellcheck"]["suggestions"]
@@ -167,6 +170,11 @@ def display_analysis(model_selection, label_category):
         # For wordcloud
         filter_category = f'{tmp_prefix}_subjectivity'
 
+    print()
+    print("selected_data:")
+    print(selected_data)
+    print()
+
     # Calculate total sum of values
     total = sum(selected_data.values())
     # Normalize values and convert to percentages
@@ -194,6 +202,7 @@ def display_analysis(model_selection, label_category):
         fig, ax = plt.subplots()
         ax.pie(normalized_values, labels=labels, explode=explode, startangle=90, labeldistance=1.15)
         ax.legend(loc='upper right', bbox_to_anchor=(-0.2, 1))
+        ax.set_title(f"Percentage of Category according to {tmp_prefix.capitalize()} model")
         st.pyplot(fig)
     with cloud_col:
         if label_category == 'Positive Mood':
@@ -215,7 +224,7 @@ def display_analysis(model_selection, label_category):
         if not len(word_freq_dict) > 0:
             st.info("No WordCloud is displayed because there is no results for the current model and analysis setting.")
         else:
-            display_wordcloud(word_freq_dict)
+            display_wordcloud(word_freq_dict, label_category, model_selection)
 
     st.write('---')
 
@@ -253,7 +262,14 @@ def display_single_only(analysis_mode=False, filter_category=None, filter_value=
 
     if analysis_mode:
         result_type = "Text"
-        doc_list = st.session_state["results"]["post"] + [item for sublist in st.session_state["results"]["comment"] for item in sublist]
+
+        if len(st.session_state["results"]["comment"]) > 0:
+            if type(st.session_state["results"]["comment"][0]) is list: # if list of list
+                doc_list = st.session_state["results"]["post"] + [item for sublist in st.session_state["results"]["comment"] for item in sublist]
+            else: # if dictionary
+                doc_list = st.session_state["results"]["post"] + st.session_state["results"]["comment"]
+        else:
+            doc_list = st.session_state["results"]["post"]
 
     elif st.session_state["results"]["post"]:
         result_type = "Post"
@@ -279,6 +295,7 @@ def display_single_only(analysis_mode=False, filter_category=None, filter_value=
     for doc in doc_list:
 
         if analysis_mode:
+            
             if not doc[filter_category][0] == filter_value:
                 continue
 
@@ -303,9 +320,7 @@ def display_single_only(analysis_mode=False, filter_category=None, filter_value=
 
             display_mood_subjectivity(doc, 18, 15)
 
-            st.write('---')
-
-def display_wordcloud(word_freq_dict):
+def display_wordcloud(word_freq_dict, label_category, model_selection):
 
     query_tokens = get_tokens_freq_dict(st.session_state["query"], "list")
     filtered_dict = {key: value for key, value in word_freq_dict.items() if key not in query_tokens}
@@ -315,6 +330,7 @@ def display_wordcloud(word_freq_dict):
     wordcloud = wc.generate_from_frequencies(filtered_dict)
 
     fig, ax = plt.subplots()
+    ax.set_title(f"WordCloud of {label_category} according to {model_selection}")
     ax.imshow(wordcloud, interpolation='bilinear')
     ax.axis("off")
     st.pyplot(fig)

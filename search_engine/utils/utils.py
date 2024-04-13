@@ -97,6 +97,10 @@ def get_text_html_color(text):
         return "DarkOrange"
     
 def update_tokens_and_labels(doc):
+    print()
+    print("before count:")
+    print(st.session_state["label_count"])
+    print()
 
     if doc['vader_sentiment'][0] == 'positive':
         st.session_state["tokens"]["vader_positive"].update(get_tokens_freq_dict(doc["text"][0]))
@@ -139,6 +143,11 @@ def update_tokens_and_labels(doc):
     else:
         st.session_state["tokens"]["textblob_objective"].update(get_tokens_freq_dict(doc["text"][0]))
         st.session_state["label_count"]["textblob_objective"] += 1
+
+    print()
+    print("after count:")
+    print(st.session_state["label_count"])
+    print()
         
 
 if __name__ == "__main__":
