@@ -118,6 +118,7 @@ class SolrManager:
         schema_list.append({"add-field":{"name":"vader_subjectivity","type":"string","stored":True,"multiValued":False}})
         schema_list.append({"add-field":{"name":"textblob_sentiment","type":"string","stored":True,"multiValued":False}})
         schema_list.append({"add-field":{"name":"textblob_subjectivity","type":"string","stored":True,"multiValued":False}})
+        schema_list.append({"add-field":{"name":"label","type":"string","stored":True,"multiValued":False}})
 
 
         for schema_dict in schema_list:
@@ -192,6 +193,7 @@ class SolrManager:
         }
 
         response = requests.get("http://localhost:8983/solr/search_reddit/query", params=params)
+        print(params)
         print(response)
 
         # Check the response

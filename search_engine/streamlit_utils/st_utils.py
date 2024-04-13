@@ -35,7 +35,10 @@ def init_session_states():
             "textblob_neutral": Counter(),
             "textblob_negative": Counter(),
             "textblob_subjective": Counter(),
-            "textblob_objective": Counter()
+            "textblob_objective": Counter(),
+            "roberta_positive": Counter(),
+            "roberta_neutral": Counter(),
+            "roberta_negative": Counter()
         }
 
     if "label_count" not in st.session_state:
@@ -49,7 +52,10 @@ def init_session_states():
             "textblob_neutral": 0,
             "textblob_negative": 0,
             "textblob_subjective": 0,
-            "textblob_objective": 0
+            "textblob_objective": 0,
+            "roberta_positive": 0,
+            "roberta_neutral": 0,
+            "roberta_negative": 0
         }
 
     if "query_time" not in st.session_state:
@@ -111,7 +117,7 @@ def get_results(solr_manager, tokens_init_format, label_init_format):
         results = solr_manager.get_text_query_result(st.session_state["query"], result_type, tmp_date_range, phrase_search=True, num_rows=st.session_state["additional_options"]["retrieve_num"])
     else:
         results = solr_manager.get_text_query_result(st.session_state["query"], result_type, tmp_date_range, num_rows=st.session_state["additional_options"]["retrieve_num"])
-
+    
     if results["response"]["numFound"] < st.session_state["additional_options"]["retrieve_num"]:
         st.session_state["suggested_query"] = suggest_diff_query(solr_manager, st.session_state["query"])
     else:
@@ -152,8 +158,10 @@ def get_results(solr_manager, tokens_init_format, label_init_format):
 def display_analysis(model_selection, label_category):
     if model_selection == "VADER":
         tmp_prefix = "vader"
-    else:
+    elif model_selection == "TextBlob":
         tmp_prefix = "textblob"
+    else:
+        tmp_prefix = "roberta"
     
     if label_category == "Positive Mood" or label_category == "Neutral Mood" or label_category == "Negative Mood":
         # Extract values for vader_positive, vader_negative, and vader_neutral
@@ -163,17 +171,15 @@ def display_analysis(model_selection, label_category):
         # For wordcloud
         filter_category = f'{tmp_prefix}_sentiment'
     else:
+        if tmp_prefix == "roberta":
+            st.info("roBERTa-based model does not have analysis results for subjectivity. Please select another option.")
+            return
         # Extract values for vader_subjective, vader_objective
         selected_data = {key: st.session_state["label_count"][key] for key in [f'{tmp_prefix}_subjective', f'{tmp_prefix}_objective']}
         # Explode settings
         explode = [0, 0]
         # For wordcloud
         filter_category = f'{tmp_prefix}_subjectivity'
-
-    print()
-    print("selected_data:")
-    print(selected_data)
-    print()
 
     # Calculate total sum of values
     total = sum(selected_data.values())
@@ -228,20 +234,23 @@ def display_analysis(model_selection, label_category):
 
     st.write('---')
 
+    if filter_category == "roberta_sentiment":
+        filter_category = 'label'
+
     display_single_only(analysis_mode=True, filter_category=filter_category, filter_value=filter_value)
 
 def display_mood_subjectivity(doc, title_font_size, content_font_size):
 
     st.markdown(f"<p style='text-align: center;font-size:{title_font_size}px;'><strong>Text Analysis:</strong></p>", unsafe_allow_html=True,
-                help="VADER and TextBlob are AI tools that help us understand the 'mood' and subjectivity of the text.\
+                help="VADER, TextBlob, and roBERTa-based are AI tools that help us understand the 'mood' and subjectivity of the text.\
                     If they give different categories, it's not a matter of one being right and the other wrong. \
-                    Instead, it's like getting two perspectives on the same text. \
-                    You can consider both and see which resonates more with your understanding of the text. \
+                    Instead, it's like getting differernt perspectives on the same text. \
+                    You can consider all and see which resonates more with your understanding of the text. \
                     Remember, these tools are here to help you, but your interpretation matters the most!")
             
-    vader_col, textblob_col = st.columns([1,1])
+    vader_col, textblob_col, roberta_col = st.columns([1,1,1])
     with vader_col:
-        with st.container(border=True):
+        with st.container(border=True, height=170):
             st.markdown(f"<p style='text-align: center;font-size:{title_font_size}px;'><strong>VADER model:</strong></p>", unsafe_allow_html=True)
             st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Mood: <strong style='color:{get_text_html_color(doc['vader_sentiment'][0])}';'>\
                         {doc['vader_sentiment'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
@@ -249,12 +258,19 @@ def display_mood_subjectivity(doc, title_font_size, content_font_size):
                         {doc['vader_subjectivity'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
             
     with textblob_col:
-        with st.container(border=True):
+        with st.container(border=True, height=170):
             st.markdown(f"<p style='text-align: center;font-size:{title_font_size}px;'><strong>TextBlob model:</strong></p>", unsafe_allow_html=True)
             st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Mood: <strong style='color:{get_text_html_color(doc['textblob_sentiment'][0])}';'>\
                         {doc['textblob_sentiment'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
             st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Subjectivity: <strong style='color:{get_text_html_color(doc['textblob_subjectivity'][0])}';'>\
                         {doc['textblob_subjectivity'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
+            
+    with roberta_col:
+        with st.container(border=True, height=170):
+            st.markdown(f"<p style='text-align: center;font-size:{title_font_size}px;'><strong>roBERTa-based model:</strong></p>", unsafe_allow_html=True,
+                        help='roBERTa-based model does not have analysis result for subjectivity.')
+            st.markdown(f"<p style='text-align: center;font-size:{content_font_size}px;'>Mood: <strong style='color:{get_text_html_color(doc['label'][0])}';'>\
+                        {doc['label'][0].capitalize()}</strong></p>", unsafe_allow_html=True)
 
 def display_single_only(analysis_mode=False, filter_category=None, filter_value=None):
 
@@ -356,7 +372,7 @@ def display_post_and_comment():
         tmp_comment_list = st.session_state["results"]["comment"][i]
 
         # Display post
-        with post_col.container(border=False, height=600):
+        with post_col.container(border=False, height=650):
             annotated_text(
                 (f'Subreddit: {tmp_post["subreddit_name"][0]}', "")
             )
@@ -375,7 +391,7 @@ def display_post_and_comment():
         with post_col:
             st.write('---')
 
-        with comment_col.container(border=True, height=600):
+        with comment_col.container(border=True, height=650):
             st.markdown(f"<h3>Comments:</h3>", unsafe_allow_html=True)
             if len(tmp_comment_list) > 0:
                 for comment in tmp_comment_list:
