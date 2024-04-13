@@ -1,6 +1,6 @@
 # SC4021 Information Retrieval-Group 24
 
-## Group Members
+## Group 24 Members
 | Name | Matriculation Number |
 | --- | -- |
 | Ong Zhi Ying, Adrian | U2121883A |
@@ -8,6 +8,7 @@
 | Cheong Yong Wen | U2021159L |
 | Kwok Zong Heng | U2021027E |
 | Mandfred Leow Hong Jie | U2122023G |
+| Mao Yiyun | U2022609J |
 
 
 ## Project Overview
@@ -20,7 +21,7 @@ The project is divided into 4 main components:
 1. Frontend UI
 1. Classification
 
-## Pre-requisites to run the code (Exact )
+## Pre-requisites to run the code (Exact versions are not required but recommended)
 1. Python 3.8.5
 1. Curl 8.4.0
 1. Apache Solr 9.5.0
@@ -32,7 +33,7 @@ The project is divided into 4 main components:
 
 ### Web crawling
 1. Run ```reddit-data-extraction.ipynb``` -> This notebook contains step by step codes for extracting/crawling data from Reddit using predefined subreddits
-1. After crawling the data, run ```data-processing-for-solr.ipynb``` -> Executes basic data pre-processing
+1. After crawling the data, run ```data-processing-for-solr.ipynb``` -> Executes basic data pre-processing before ingesting data into Solr
 
 #### Structure of crawled data
 - {subreddit_name}-posts.csv -> Contains the top 100 posts from the subreddit
