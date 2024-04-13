@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from collections import Counter
+import time
 
 from solr_utils.solr_manager import SolrManager
 from streamlit_utils.st_utils import (display_post_and_comment, display_no_result_message,
@@ -58,6 +59,7 @@ with search_col:
 
 with st.sidebar:
     st.subheader("Additional options:")
+    st.write("\* *Please click 'Search' to search with the additional options.*")
     exact_matching = st.checkbox("Tick to search for the exact phrase")
     with st.expander("Date range"):
         date_left_col, date_right_col = st.columns([1,1])
@@ -94,8 +96,10 @@ if search_button or st.session_state["search_suggested"]:
                 st.session_state["additional_options"] = cur_options
                 st.session_state["query"] = query
 
+                start_time = time.time()
                 # Get results for current query
                 get_results(solr_manager, tokens_init_format, label_init_format)
+                st.session_state["query_time"] = time.time() - start_time
         
         elif st.session_state["search_suggested"]:
             with st.spinner("Loading..."):
@@ -104,8 +108,10 @@ if search_button or st.session_state["search_suggested"]:
                 st.session_state["suggested_query"] = None
                 st.session_state["search_suggested"] = False
 
+                start_time = time.time()
                 # Get results for current query
                 get_results(solr_manager, tokens_init_format, label_init_format)
+                st.session_state["query_time"] = time.time() - start_time
         
         # Else, do nothing.
 
@@ -132,8 +138,10 @@ else:
             suggest_spell_correction(button_id="tab1")
 
         if tmp_display_state == "posts and comments":
+            st.write(f"Retrieved results in: {st.session_state['query_time']:.2f} sec")
             display_post_and_comment()     
         elif tmp_display_state == "single only":
+            st.write(f"Retrieved results in: {st.session_state['query_time']:.2f} sec")
             display_single_only()
         else:
             display_no_result_message()
