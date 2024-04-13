@@ -15,7 +15,8 @@ from streamlit_utils.st_utils import (display_post_and_comment, display_no_resul
 
 # Set up Solr Core
 solr_manager = SolrManager(os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "solr-9.5.0-slim"),
-                           os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "data/(copy)VadersTextBlobCombinedData.csv"))
+                           os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "data/merged_all_new.csv"))
+
 
 tokens_init_format = {
             "vader_positive": Counter(),
@@ -27,7 +28,10 @@ tokens_init_format = {
             "textblob_neutral": Counter(),
             "textblob_negative": Counter(),
             "textblob_subjective": Counter(),
-            "textblob_objective": Counter()
+            "textblob_objective": Counter(),
+            "roberta_positive": Counter(),
+            "roberta_neutral": Counter(),
+            "roberta_negative": Counter()
         }
 
 label_init_format = {
@@ -40,7 +44,10 @@ label_init_format = {
             "textblob_neutral": 0,
             "textblob_negative": 0,
             "textblob_subjective": 0,
-            "textblob_objective": 0
+            "textblob_objective": 0,
+            "roberta_positive": 0,
+            "roberta_neutral": 0,
+            "roberta_negative": 0
         }
 
 # Page setup
@@ -164,7 +171,7 @@ else:
             with col1:
                 model_selection = st.radio(
                     "Use which model's results?",
-                    ["VADER", "TextBlob"]
+                    ["VADER", "TextBlob", "roBERTa-based"]
                 )
             with col2:
                 label_category = st.radio(
@@ -186,5 +193,3 @@ width: 100%;
     '''
 
 st.markdown(css, unsafe_allow_html=True)
-
-

@@ -6,6 +6,7 @@ import string
 import re
 from collections import Counter
 import streamlit as st
+import json
 
 # Check if NLTK resources are already downloaded
 def check_nltk_resources():
@@ -97,10 +98,6 @@ def get_text_html_color(text):
         return "DarkOrange"
     
 def update_tokens_and_labels(doc):
-    print()
-    print("before count:")
-    print(st.session_state["label_count"])
-    print()
 
     if doc['vader_sentiment'][0] == 'positive':
         st.session_state["tokens"]["vader_positive"].update(get_tokens_freq_dict(doc["text"][0]))
@@ -132,7 +129,7 @@ def update_tokens_and_labels(doc):
         st.session_state["tokens"]["textblob_neutral"].update(get_tokens_freq_dict(doc["text"][0]))
         st.session_state["label_count"]["textblob_neutral"] += 1
 
-    else: # if doc['vader_sentiment'][0] == 'negative':
+    else: # if doc['textblob_sentiment'][0] == 'negative':
         st.session_state["tokens"]["textblob_negative"].update(get_tokens_freq_dict(doc["text"][0]))
         st.session_state["label_count"]["textblob_negative"] += 1
 
@@ -144,10 +141,20 @@ def update_tokens_and_labels(doc):
         st.session_state["tokens"]["textblob_objective"].update(get_tokens_freq_dict(doc["text"][0]))
         st.session_state["label_count"]["textblob_objective"] += 1
 
-    print()
-    print("after count:")
-    print(st.session_state["label_count"])
-    print()
+    ###############################################
+    
+    if doc['label'][0] == 'positive':
+        st.session_state["tokens"]["roberta_positive"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["roberta_positive"] += 1
+
+    elif doc['label'][0] == 'neutral':
+        st.session_state["tokens"]["roberta_neutral"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["roberta_neutral"] += 1
+
+    else: # if doc['label'][0] == 'negative':
+        st.session_state["tokens"]["roberta_negative"].update(get_tokens_freq_dict(doc["text"][0]))
+        st.session_state["label_count"]["roberta_negative"] += 1
+
         
 
 if __name__ == "__main__":
