@@ -255,17 +255,3 @@ class SolrManager:
         else:
             return None
 
-# Only for testing purposes, not meant for using in the application
-if __name__ == "__main__":
-
-    print(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "solr-9.5.0-slim"))
-
-    solr_manager = SolrManager(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "solr-9.5.0-slim"),
-                            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), "data/(copy)VadersTextBlobCombinedData.csv"))
-
-    result = solr_manager.get_text_query_result("ford", type="comment", num_rows=10, phrase_search=False)
-    # result = solr_manager.get_comment_from_post_id_and_text("ngqmpr", "ford")
-    # result = solr_manager.spellcheck("graet")["spellcheck"]["suggestions"][1]["suggestion"][0]["word"]
-    # result = solr_manager.spellcheck("hillo")#["spellcheck"]["suggestions"]#[1]["suggestion"][0]["word"]
-    # print(type(result))
-    print(json.dumps(result, indent=4))

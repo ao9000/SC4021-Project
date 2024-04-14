@@ -154,11 +154,3 @@ def update_tokens_and_labels(doc):
     else: # if doc['label'][0] == 'negative':
         st.session_state["tokens"]["roberta_negative"].update(get_tokens_freq_dict(doc["text"][0]))
         st.session_state["label_count"]["roberta_negative"] += 1
-
-        
-
-if __name__ == "__main__":
-    # Example usage
-    query = "have"
-    text = "I have a few words and I have another string that may have the words in query."
-    bold_text = bold_matching_words(query, text)
