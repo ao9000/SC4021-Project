@@ -1,4 +1,4 @@
-### Model Descriptions
+## Model Descriptions
 Different classification innovations are implemented in various notebooks.
 The notebooks are as follows:
 1. ```Polarity_and_subjectivity_Detection.ipynb``` -> This notebook contains the code for detecting the polarity and subjectivity of the comments
