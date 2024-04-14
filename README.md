@@ -54,7 +54,8 @@ The project is divided into 4 main components:
 1. Run ```streamlit run app.py``` to start the streamlit app
 
 ### Classification
-Different classification innovations are implemented in various notebooks. These can be found under ```classification_final\models```.The notebooks are as follows:
+Different classification innovations are implemented in various notebooks. These can be found under ```classification_final\models```.
+The notebooks are as follows:
 1. ```Polarity_and_subjectivity_Detection.ipynb``` -> This notebook contains the code for detecting the polarity and subjectivity of the comments
 1. ```inter_annotation_agreement.ipynb``` -> This notebook contains the code for calculating the inter-annotator agreement
 1. ```Roberta_mnli_classification_majorityvoting.ipynb``` -> This notebook contains the code for evaluating dataset selection with 2 roberta models and experimenting voting ensemble
