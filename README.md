@@ -61,6 +61,14 @@ The notebooks are as follows:
 1. ```Roberta_mnli_classification_majorityvoting.ipynb``` -> This notebook contains the code for evaluating dataset selection with 2 roberta models and experimenting voting ensemble
 1. ```Classification_Bert.ipynb```-> Uses BERT pretrain model to predict sentimental analysis on comments
 
+### Innovation
+Different Innovations are implemented with various notebooks.These can be found under ```Innovation\models```.
+The notebooks are as follows
+1. ```Roberta_mnli_classification_majorityvoting.ipynb``` -> This notebook contains the code for evaluating dataset selection with 2 roberta models and experimenting voting ensemble.
+1. ```sarcasm_detection``` -> This notebook contains the code for evaluation for text that are sarcastic
+1. ```innovation_bert_and_stack_ensemble```->  This notebook utilizes the annotated data and splitting into train/test dataset with ratio 75/25. It also contains fine tuning with BERT and comparing the results to a stack ensemble with BERT, RandomForest and LogisticRegression. 
+
+
 #### Labelled data
 - ```popular_comment_Bolt_YWAnnotate.csv``` -> Contains the labelled data for the Bolt EV labelled by 1 annotator
 - ```popular_comment_Bolt_zh_annotate.csv``` -> Contains the labelled data for the Bolt EV labelled by 1 annotator
