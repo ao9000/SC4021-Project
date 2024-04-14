@@ -24,7 +24,7 @@ The project is divided into 4 main components:
 ## Pre-requisites to run the code (Exact versions are not required but recommended)
 1. Python 3.8.5
 1. Curl 8.4.0
-1. Apache Solr 9.5.0
+1. Apache Solr 9.5.0 (Place it under this repo's folder)
 1. Java 1.8.0_401
 
 ## Instructions to run the code
@@ -50,9 +50,8 @@ The project is divided into 4 main components:
 1. Navigate to the jupyter notebook ```add_solr_schema.ipynb``` and run the cells to index the data into Apache Solr
 
 ### Frontend UI
-1. Start solr server by running ```solr start``` in the terminal
 1. Navigate to the frontend directory by running ```cd search_engine```
-1. Run ```python app.py``` to start the streamlit app
+1. Run ```streamlit run app.py``` to start the streamlit app
 
 ### Classification
 Different classification innovations are implemented in various notebooks. The notebooks are as follows:
