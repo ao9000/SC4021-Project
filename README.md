@@ -28,7 +28,7 @@ The project is divided into 4 main components:
 1. Java 1.8.0_401
 
 ## Instructions to run the code
-- Firstly, change directory into the base directory using ```cd SC4021-Project``` and install all required libraries using ```pip install -r requirements.txt```
+- Firstly, change directory into the base directory using ```cd SC4021-Project``` and install all required libraries using ```pip install -r combined_requirements.txt```
 - Make sure you have the correct venu or conda environment activated
 
 ### Web crawling
